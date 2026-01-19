@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swastik Mishra</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --link-color: #0056b3;
+            --secondary-text: #666666;
+            --border-color: #eeeeee;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e0e0e0;
+                --link-color: #4da3ff;
+                --secondary-text: #a0a0a0;
+                --border-color: #333333;
+            }
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            line-height: 1.6;
+            padding: 0 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        p {
+            text-align: center;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+        header p {
+            color: var(--secondary-text);
+        }
+
+        img {
+            display: block;
+            margin: auto;
+            width: 50%;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 30px 0;
+        }
+
+        #fin-sim {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fin-sim"></canvas>
+
+    <header>
+        <img src="profile.png" alt="Profile Picture of Swastik Mishra" width="50%" height="50%">
+        <h1>Swastik Mishra</h1>
+        <p><em>Pursuing MS in Financial Engineering at New York University</em></p>
+    </header>
+
+    <hr>
+
+    <main>
+        <h2>About Me</h2>
+        <p>
+            I like solving hard, interesting problems, especially the kind where math is incredibly intuitive. My background is in computer science, data science, and quantitative finance, and I enjoy building models that connect theory with real-world decisions.
+        </p>
+        <p>
+            Lately, I've been getting deep into control theory, reinforcement learning, and stochastic control, especially for real-time strategies. I care about clean thinking, solid math, and systems that actually work, and further, generate value. Pleasure seeing you here!
+        </p>
+    </main>
+
+    <hr>
+
+    <section>
+        <h2>Connect</h2>
+        <ul>
+            <li>
+                swastik.mishra[at]nyu.edu
+            </li>
+            <li>
+                <a href="https://www.linkedin.com/in/swastik-mishra26/" target="_blank">LinkedIn</a>
+            </li>
+            <li>
+                <a href="https://github.com/sudoVenomSnake" target="_blank">GitHub</a>
+            </li>
+            <li>
+                <a href="/resume.pdf" target="_blank">Resume</a>
+            </li>
+        </ul>
+    </section>
+
+    <hr>
+
+    <footer>
+        <small>&copy; 2026 Swastik Mishra. All rights reserved.</small>
+    </footer>
+
+    <script>
+    const c = document.getElementById('fin-sim');
+    const ctx = c.getContext('2d');
+
+    // Financial Parameters
+    const S0 = 100; // Start Price
+    const r = 0.05; // Risk Free Rate
+    const vol = 0.7; // Volatility
+    const T = 1; // Time to expiry
+    const strikes = [80, 85, 90, 95, 100, 105, 110, 115, 120];
+
+    // Simulation State
+    let paths = [];
+    let w, h;
+
+    const resize = () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight; };
+    window.onresize = resize;
+    resize();
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h / 2); 
+
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        ctx.fillStyle = isDark ? '#00ff41' : '#000'; 
+        ctx.font = "14px monospace";
+
+        ctx.fillText(`MONTE CARLO OPTION PRICER (N=${paths.length})`, 20, 30);
+        ctx.fillText(`CALL     STRIKE    PUT`, 20, 60);
+
+        let discount = Math.exp(-r * T);
+
+        strikes.forEach((K, i) => {
+            let callSum = 0;
+            let putSum = 0;
+            
+            if (paths.length > 0) {
+                for (let ST of paths) {
+                    callSum += Math.max(ST - K, 0);
+                    putSum += Math.max(K - ST, 0);
+                }
+            }
+
+            let callPx = (callSum / (paths.length || 1)) * discount;
+            let putPx = (putSum / (paths.length || 1)) * discount;
+
+            let y = 80 + (i * 20);
+            if (y < h/2 - 10) { 
+                ctx.fillText(`${callPx.toFixed(2).padEnd(9)} ${K}      ${putPx.toFixed(2)}`, 20, y);
+            }
+        });
+
+        ctx.textAlign = "right"; 
+        let rightX = w - 40;
+
+        ctx.fillText("MODEL SPECIFICATIONS", rightX, 30);
+        
+        ctx.fillText("Dynamics (GBM):", rightX, 60);
+        ctx.fillText("dS = rSdt + σSdW", rightX, 80);
+
+        ctx.fillText("Valuation:", rightX, 120);
+        ctx.fillText("C = e^(-rT) * E[max(S_T - K, 0)]", rightX, 140);
+        ctx.fillText("P = e^(-rT) * E[max(K - S_T, 0)]", rightX, 160);
+
+        ctx.fillText("Parameters:", rightX, 200);
+        ctx.fillText(`S₀=${S0}  r=${r}  σ=${vol}  T=${T}`, rightX, 220);
+
+        ctx.textAlign = "left";
+        
+        ctx.beginPath();
+        let currentPrice = S0;
+        let yStart = h * 0.75; 
+        ctx.moveTo(0, yStart);
+        ctx.strokeStyle = isDark ? 'rgba(100, 255, 100, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        for (let x = 0; x < w; x += 10) {
+            let dt = 1/w; 
+            let u = Math.random() || 0.01;
+            let v = Math.random();
+            // Box Muller Transform (Uniform -> Normal)
+            let z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+
+            currentPrice = currentPrice * Math.exp((r - 0.5 * vol * vol) * dt + vol * Math.sqrt(dt) * z);
+
+            let y = yStart - (currentPrice - S0) * 2;
+            
+            if (y < h/2) y = h/2; 
+            if (y > h) y = h;
+
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        paths.push(currentPrice);
+
+        if (paths.length > 1000) {
+            ctx.clearRect(0, h/2, w, h/2); 
+            paths = []; 
+        }
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
+
+</body>
+</html>
